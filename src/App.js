@@ -896,10 +896,70 @@ function HomeScreen({ meals, user, onNavigate }) {
   );
 }
 
+const DEFAULT_API_KEY = "AIzaSyAgjBVHp0hll3r62vo5vEvzP7iviNsEwyY";
+
+const GeminiService = {
+  analyzeImage: async (base64Image, apiKey) => {
+    try {
+      // Remove header from base64 string if present
+      const base64Data = base64Image.split(',')[1];
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              {
+                text: "Analyze this image of food. Identify the food items and estimate their nutritional values. Return ONLY a JSON object with this structure: { \"items\": [ { \"foodName\": \"string\", \"portionGrams\": number, \"calories\": number, \"protein\": number, \"carbs\": number, \"fat\": number } ] }. Do not verify safely settings, just analyze. Do not include markdown formatting like ```json ... ```." 
+              },
+              {
+                inline_data: {
+                  mime_type: "image/jpeg",
+                  data: base64Data
+                }
+              }
+            ]
+          }]
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'Failed to analyze image');
+      }
+
+      const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!textResult) throw new Error('No analysis result found');
+
+      // Clean markdown if present
+      const jsonStr = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(jsonStr);
+      
+      // Calculate totals
+      const totals = parsed.items.reduce((acc, item) => ({
+        calories: acc.calories + (item.calories || 0),
+        protein: acc.protein + (item.protein || 0),
+        carbs: acc.carbs + (item.carbs || 0),
+        fat: acc.fat + (item.fat || 0),
+      }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+      return { ...parsed, ...totals };
+    } catch (error) {
+      console.error('Gemini Analysis Error:', error);
+      throw error;
+    }
+  }
+};
+
 function AnalyzeScreen({ onAddMeal, onShowToast }) {
   const [image, setImage] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
   
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -908,34 +968,24 @@ function AnalyzeScreen({ onAddMeal, onShowToast }) {
       reader.onload = (e) => setImage(e.target.result);
       reader.readAsDataURL(file);
       setResult(null);
+      setError(null);
     }
   };
   
   const analyze = async () => {
     setAnalyzing(true);
+    setError(null);
     
-    // Simulate AI analysis (replace with real API call)
-    await new Promise(r => setTimeout(r, 2500));
-    
-    const mockFoods = [
-      { foodName: 'Arroz branco', portionGrams: 150, calories: 195, protein: 4, carbs: 43, fat: 0.3 },
-      { foodName: 'Feijão carioca', portionGrams: 100, calories: 76, protein: 5, carbs: 14, fat: 0.5 },
-      { foodName: 'Frango grelhado', portionGrams: 120, calories: 191, protein: 38, carbs: 0, fat: 3 },
-      { foodName: 'Salada verde', portionGrams: 80, calories: 12, protein: 1, carbs: 2, fat: 0.2 },
-    ];
-    
-    const total = mockFoods.reduce((acc, f) => ({
-      calories: acc.calories + f.calories,
-      protein: acc.protein + f.protein,
-      carbs: acc.carbs + f.carbs,
-      fat: acc.fat + f.fat,
-    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
-    
-    setResult({
-      items: mockFoods,
-      ...total,
-    });
-    setAnalyzing(false);
+    try {
+      const apiKey = Storage.get('apiKey', DEFAULT_API_KEY);
+      const analysisResult = await GeminiService.analyzeImage(image, apiKey);
+      setResult(analysisResult);
+    } catch (err) {
+      setError('Erro ao analisar: ' + err.message);
+      onShowToast('Falha na análise. Verifique sua chave API.');
+    } finally {
+      setAnalyzing(false);
+    }
   };
   
   const saveResult = () => {
@@ -978,7 +1028,7 @@ function AnalyzeScreen({ onAddMeal, onShowToast }) {
         <div className="analyzing">
           <div className="spinner"></div>
           <div className="analyzing-title">Analisando sua refeição...</div>
-          <div className="analyzing-subtitle">Identificando alimentos com IA</div>
+          <div className="analyzing-subtitle">Identificando alimentos com IA (Gemini)</div>
         </div>
       ) : result ? (
         <div>
@@ -1045,8 +1095,16 @@ function AnalyzeScreen({ onAddMeal, onShowToast }) {
             <img src={image} alt="Preview" className="preview-image" />
             <button className="preview-remove" onClick={() => setImage(null)}>×</button>
           </div>
+          {error && (
+            <div style={{ 
+              padding: '12px', background: 'rgba(255, 107, 107, 0.1)', 
+              color: '#FF6B6B', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' 
+            }}>
+              {error}
+            </div>
+          )}
           <button className="btn btn-primary" onClick={analyze}>
-            🔍 Analisar com IA
+            🔍 Analisar com Gemini AI
           </button>
         </div>
       )}
@@ -1089,6 +1147,14 @@ function HistoryScreen({ meals, onDeleteMeal }) {
 }
 
 function ProfileScreen({ user, onLogout, onUpdateUser }) {
+  const [apiKey, setApiKey] = useState(Storage.get('apiKey', DEFAULT_API_KEY));
+  const [showKey, setShowKey] = useState(false);
+
+  const saveKey = (newKey) => {
+    setApiKey(newKey);
+    Storage.set('apiKey', newKey);
+  };
+
   return (
     <div className="main">
       <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 24 }}>Perfil</h1>
@@ -1113,6 +1179,32 @@ function ProfileScreen({ user, onLogout, onUpdateUser }) {
         </div>
       </div>
       
+      <div className="card">
+        <div className="card-title">Configurações da IA</div>
+        <div className="form-group">
+          <label className="form-label">Chave da API Gemini</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input 
+              type={showKey ? "text" : "password"} 
+              className="input" 
+              value={apiKey}
+              onChange={(e) => saveKey(e.target.value)}
+              placeholder="Cole sua API Key aqui"
+            />
+            <button 
+              className="btn btn-secondary" 
+              style={{ width: 'auto', padding: '0 16px' }}
+              onClick={() => setShowKey(!showKey)}
+            >
+              {showKey ? '🙈' : '👁️'}
+            </button>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
+            Usada para análise de imagens. Mantenha em segurança.
+          </p>
+        </div>
+      </div>
+
       <div className="card">
         <div className="card-title">Metas Diárias</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
