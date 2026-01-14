@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
+// ============== CONFIG ==============
+// API Key do Gemini configurada:
+const GEMINI_API_KEY = 'AIzaSyAgjBVHp0hll3r62vo5vEvzP7iviNsEwyY';
+
 // ============== STYLES ==============
 const styles = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -38,7 +42,6 @@ const styles = `
     flex-direction: column;
   }
   
-  /* Header */
   .header {
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border);
@@ -61,7 +64,6 @@ const styles = `
   .logo-icon { font-size: 28px; }
   .logo-text { font-size: 20px; font-weight: 700; color: var(--primary); }
   
-  /* Main Content */
   .main {
     flex: 1;
     padding: 20px;
@@ -71,7 +73,6 @@ const styles = `
     width: 100%;
   }
   
-  /* Bottom Navigation */
   .bottom-nav {
     position: fixed;
     bottom: 0;
@@ -102,18 +103,13 @@ const styles = `
     -webkit-tap-highlight-color: transparent;
   }
   
-  .nav-item:active {
-    transform: scale(0.95);
-  }
-  
+  .nav-item:active { transform: scale(0.95); }
   .nav-item.active {
     color: var(--primary);
     background: rgba(78,205,196,0.1);
   }
-  
   .nav-item svg { width: 24px; height: 24px; }
   
-  /* Cards */
   .card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -128,7 +124,6 @@ const styles = `
     margin-bottom: 16px;
   }
   
-  /* Progress Ring */
   .progress-container {
     display: flex;
     flex-direction: column;
@@ -142,16 +137,12 @@ const styles = `
     height: 180px;
   }
   
-  .progress-ring svg {
-    transform: rotate(-90deg);
-  }
-  
+  .progress-ring svg { transform: rotate(-90deg); }
   .progress-ring .bg {
     fill: none;
     stroke: rgba(255,255,255,0.1);
     stroke-width: 10;
   }
-  
   .progress-ring .progress {
     fill: none;
     stroke: var(--primary);
@@ -179,7 +170,6 @@ const styles = `
     color: var(--text-muted);
   }
   
-  /* Macros */
   .macros-grid {
     display: flex;
     flex-direction: column;
@@ -215,7 +205,6 @@ const styles = `
     transition: width 0.5s ease;
   }
   
-  /* Buttons */
   .btn {
     display: inline-flex;
     align-items: center;
@@ -242,6 +231,11 @@ const styles = `
     background: var(--primary-dark);
   }
   
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
   .btn-secondary {
     background: var(--card);
     color: var(--text);
@@ -252,7 +246,6 @@ const styles = `
     background: var(--card-hover);
   }
   
-  /* Upload Area */
   .upload-area {
     border: 2px dashed var(--border);
     border-radius: var(--radius-lg);
@@ -267,27 +260,11 @@ const styles = `
     background: rgba(78,205,196,0.05);
   }
   
-  .upload-icon {
-    font-size: 56px;
-    margin-bottom: 16px;
-  }
+  .upload-icon { font-size: 56px; margin-bottom: 16px; }
+  .upload-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .upload-subtitle { font-size: 14px; color: var(--text-muted); }
   
-  .upload-title {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-  
-  .upload-subtitle {
-    font-size: 14px;
-    color: var(--text-muted);
-  }
-  
-  /* Image Preview */
-  .preview-container {
-    position: relative;
-  }
-  
+  .preview-container { position: relative; }
   .preview-image {
     width: 100%;
     border-radius: var(--radius-lg);
@@ -312,31 +289,62 @@ const styles = `
     justify-content: center;
   }
   
-  /* Analyzing State */
   .analyzing {
     text-align: center;
     padding: 60px 20px;
   }
   
-  .analyzing-icon {
-    font-size: 72px;
-    margin-bottom: 24px;
-    animation: pulse 2s ease-in-out infinite;
+  .analyzing-steps {
+    margin-top: 24px;
+    text-align: left;
+    max-width: 250px;
+    margin-left: auto;
+    margin-right: auto;
   }
   
-  .analyzing-title {
-    font-size: 20px;
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-  
-  .analyzing-subtitle {
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 14px;
     color: var(--text-muted);
   }
   
+  .step.active {
+    color: var(--primary);
+  }
+  
+  .step.done {
+    color: var(--primary);
+  }
+  
+  .step-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    background: var(--card);
+    border: 2px solid var(--border);
+  }
+  
+  .step.active .step-icon {
+    border-color: var(--primary);
+    animation: pulse 1s ease-in-out infinite;
+  }
+  
+  .step.done .step-icon {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--bg);
+  }
+  
   @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(0.95); }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
   }
   
   @keyframes spin {
@@ -354,7 +362,6 @@ const styles = `
     margin: 0 auto 24px;
   }
   
-  /* Results */
   .results-header {
     display: flex;
     align-items: center;
@@ -424,24 +431,10 @@ const styles = `
     border-radius: var(--radius);
   }
   
-  .food-name {
-    font-size: 14px;
-    font-weight: 500;
-  }
+  .food-name { font-size: 14px; font-weight: 500; }
+  .food-portion { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .food-calories { font-size: 14px; font-weight: 600; color: var(--primary); }
   
-  .food-portion {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-  
-  .food-calories {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--primary);
-  }
-  
-  /* Meal List */
   .meal-item {
     display: flex;
     align-items: center;
@@ -476,7 +469,6 @@ const styles = `
   .meal-items-count { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
   .meal-calories { font-size: 15px; font-weight: 600; color: var(--primary); }
   
-  /* Stats */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -504,37 +496,18 @@ const styles = `
     font-size: 22px;
   }
   
-  .stat-value {
-    font-size: 24px;
-    font-weight: 700;
-  }
+  .stat-value { font-size: 24px; font-weight: 700; }
+  .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
   
-  .stat-label {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-  
-  /* Empty State */
   .empty-state {
     text-align: center;
     padding: 60px 20px;
     color: var(--text-muted);
   }
   
-  .empty-icon {
-    font-size: 56px;
-    margin-bottom: 16px;
-  }
+  .empty-icon { font-size: 56px; margin-bottom: 16px; }
+  .empty-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
   
-  .empty-title {
-    font-size: 17px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 8px;
-  }
-  
-  /* Streak Badge */
   .streak-badge {
     display: inline-flex;
     align-items: center;
@@ -547,7 +520,6 @@ const styles = `
     font-weight: 600;
   }
   
-  /* Section Title */
   .section-header {
     display: flex;
     justify-content: space-between;
@@ -555,12 +527,8 @@ const styles = `
     margin-bottom: 14px;
   }
   
-  .section-title {
-    font-size: 17px;
-    font-weight: 600;
-  }
+  .section-title { font-size: 17px; font-weight: 600; }
   
-  /* Inputs */
   .input {
     width: 100%;
     padding: 16px;
@@ -573,26 +541,12 @@ const styles = `
     -webkit-appearance: none;
   }
   
-  .input:focus {
-    border-color: var(--primary);
-  }
+  .input:focus { border-color: var(--primary); }
+  .input::placeholder { color: var(--text-muted); }
   
-  .input::placeholder {
-    color: var(--text-muted);
-  }
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
   
-  .form-group {
-    margin-bottom: 16px;
-  }
-  
-  .form-label {
-    display: block;
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 8px;
-  }
-  
-  /* Login */
   .login-page {
     min-height: 100vh;
     min-height: 100dvh;
@@ -604,32 +558,11 @@ const styles = `
     padding-bottom: max(20px, env(safe-area-inset-bottom));
   }
   
-  .login-container {
-    width: 100%;
-    max-width: 400px;
-  }
-  
-  .login-header {
-    text-align: center;
-    margin-bottom: 40px;
-  }
-  
-  .login-logo {
-    font-size: 72px;
-    margin-bottom: 16px;
-  }
-  
-  .login-title {
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 8px;
-  }
-  
-  .login-subtitle {
-    color: var(--text-muted);
-    font-size: 15px;
-  }
+  .login-container { width: 100%; max-width: 400px; }
+  .login-header { text-align: center; margin-bottom: 40px; }
+  .login-logo { font-size: 72px; margin-bottom: 16px; }
+  .login-title { font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+  .login-subtitle { color: var(--text-muted); font-size: 15px; }
   
   .login-divider {
     display: flex;
@@ -647,11 +580,8 @@ const styles = `
     background: var(--border);
   }
   
-  .login-divider span {
-    padding: 0 16px;
-  }
+  .login-divider span { padding: 0 16px; }
   
-  /* Toast/Alert */
   .toast {
     position: fixed;
     bottom: 100px;
@@ -667,27 +597,114 @@ const styles = `
     animation: slideUp 0.3s ease;
   }
   
+  .error-toast {
+    background: var(--accent);
+    color: white;
+  }
+  
   @keyframes slideUp {
     from { transform: translateX(-50%) translateY(20px); opacity: 0; }
     to { transform: translateX(-50%) translateY(0); opacity: 1; }
   }
 
-  /* Responsive */
+  .api-key-input {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: rgba(255,230,109,0.1);
+    border: 1px solid rgba(255,230,109,0.3);
+    border-radius: var(--radius);
+  }
+  
+  .api-key-input label {
+    display: block;
+    font-size: 13px;
+    color: var(--yellow);
+    margin-bottom: 8px;
+  }
+
   @media (min-width: 768px) {
-    .main {
-      padding: 32px;
-      padding-bottom: 120px;
-    }
-    
-    .header {
-      padding: 20px 32px;
-    }
-    
-    .upload-area {
-      padding: 80px 40px;
-    }
+    .main { padding: 32px; padding-bottom: 120px; }
+    .header { padding: 20px 32px; }
+    .upload-area { padding: 80px 40px; }
   }
 `;
+
+// ============== GEMINI API ==============
+async function analyzeWithGemini(imageBase64, apiKey) {
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  
+  // Remove o prefixo data:image/...;base64, se existir
+  const base64Data = imageBase64.includes('base64,') 
+    ? imageBase64.split('base64,')[1] 
+    : imageBase64;
+  
+  const prompt = `Analise esta imagem de comida e retorne APENAS um JSON válido (sem markdown, sem texto extra) com a seguinte estrutura:
+{
+  "items": [
+    {
+      "foodName": "nome do alimento em português",
+      "portionGrams": numero estimado em gramas,
+      "calories": numero de calorias,
+      "protein": gramas de proteína,
+      "carbs": gramas de carboidratos,
+      "fat": gramas de gordura
+    }
+  ]
+}
+
+Regras:
+- Identifique TODOS os alimentos visíveis na imagem
+- Estime as porções baseado no tamanho aparente
+- Use valores nutricionais reais baseados em tabelas nutricionais brasileiras (TACO)
+- Se não conseguir identificar comida, retorne: {"items": [], "error": "Não foi possível identificar alimentos na imagem"}
+- Retorne APENAS o JSON, sem explicações`;
+
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: prompt },
+          {
+            inline_data: {
+              mime_type: "image/jpeg",
+              data: base64Data
+            }
+          }
+        ]
+      }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 1024,
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Erro na API do Gemini');
+  }
+
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  if (!text) {
+    throw new Error('Resposta vazia do Gemini');
+  }
+
+  // Limpa o texto removendo possíveis marcadores de código
+  const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  
+  try {
+    return JSON.parse(cleanText);
+  } catch (e) {
+    console.error('Erro ao parsear JSON:', cleanText);
+    throw new Error('Resposta inválida do Gemini');
+  }
+}
 
 // ============== ICONS ==============
 const Icons = {
@@ -803,13 +820,13 @@ function BottomNav({ currentTab, onChangeTab }) {
   );
 }
 
-function Toast({ message, onClose }) {
+function Toast({ message, type = 'success', onClose }) {
   useEffect(() => {
     const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);
   }, [onClose]);
   
-  return <div className="toast">{message}</div>;
+  return <div className={`toast ${type === 'error' ? 'error-toast' : ''}`}>{message}</div>;
 }
 
 // ============== SCREENS ==============
@@ -896,70 +913,12 @@ function HomeScreen({ meals, user, onNavigate }) {
   );
 }
 
-const DEFAULT_API_KEY = "AIzaSyAgjBVHp0hll3r62vo5vEvzP7iviNsEwyY";
-
-const GeminiService = {
-  analyzeImage: async (base64Image, apiKey) => {
-    try {
-      // Remove header from base64 string if present
-      const base64Data = base64Image.split(',')[1];
-      
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                text: "Analyze this image of food. Identify the food items and estimate their nutritional values. Return ONLY a JSON object with this structure: { \"items\": [ { \"foodName\": \"string\", \"portionGrams\": number, \"calories\": number, \"protein\": number, \"carbs\": number, \"fat\": number } ] }. Do not verify safely settings, just analyze. Do not include markdown formatting like ```json ... ```." 
-              },
-              {
-                inline_data: {
-                  mime_type: "image/jpeg",
-                  data: base64Data
-                }
-              }
-            ]
-          }]
-        })
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error?.message || 'Failed to analyze image');
-      }
-
-      const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!textResult) throw new Error('No analysis result found');
-
-      // Clean markdown if present
-      const jsonStr = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(jsonStr);
-      
-      // Calculate totals
-      const totals = parsed.items.reduce((acc, item) => ({
-        calories: acc.calories + (item.calories || 0),
-        protein: acc.protein + (item.protein || 0),
-        carbs: acc.carbs + (item.carbs || 0),
-        fat: acc.fat + (item.fat || 0),
-      }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
-
-      return { ...parsed, ...totals };
-    } catch (error) {
-      console.error('Gemini Analysis Error:', error);
-      throw error;
-    }
-  }
-};
-
-function AnalyzeScreen({ onAddMeal, onShowToast }) {
+function AnalyzeScreen({ onAddMeal, onShowToast, apiKey, onSetApiKey }) {
   const [image, setImage] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
+  const [step, setStep] = useState(0);
+  const [tempApiKey, setTempApiKey] = useState(apiKey);
   
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -968,23 +927,57 @@ function AnalyzeScreen({ onAddMeal, onShowToast }) {
       reader.onload = (e) => setImage(e.target.result);
       reader.readAsDataURL(file);
       setResult(null);
-      setError(null);
     }
   };
   
   const analyze = async () => {
+    if (!apiKey) {
+      onShowToast('Configure sua API Key do Gemini primeiro!', 'error');
+      return;
+    }
+    
     setAnalyzing(true);
-    setError(null);
+    setStep(1);
     
     try {
-      const apiKey = Storage.get('apiKey', DEFAULT_API_KEY);
-      const analysisResult = await GeminiService.analyzeImage(image, apiKey);
-      setResult(analysisResult);
-    } catch (err) {
-      setError('Erro ao analisar: ' + err.message);
-      onShowToast('Falha na análise. Verifique sua chave API.');
+      // Step 1: Enviando
+      await new Promise(r => setTimeout(r, 500));
+      setStep(2);
+      
+      // Step 2: Analisando com Gemini
+      const response = await analyzeWithGemini(image, apiKey);
+      setStep(3);
+      
+      await new Promise(r => setTimeout(r, 300));
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      if (!response.items || response.items.length === 0) {
+        throw new Error('Nenhum alimento identificado na imagem');
+      }
+      
+      // Calcular totais
+      const totals = response.items.reduce((acc, item) => ({
+        calories: acc.calories + (item.calories || 0),
+        protein: acc.protein + (item.protein || 0),
+        carbs: acc.carbs + (item.carbs || 0),
+        fat: acc.fat + (item.fat || 0),
+      }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+      
+      setResult({
+        items: response.items,
+        ...totals,
+      });
+      
+    } catch (error) {
+      console.error('Erro na análise:', error);
+      onShowToast(error.message || 'Erro ao analisar imagem', 'error');
+      setImage(null);
     } finally {
       setAnalyzing(false);
+      setStep(0);
     }
   };
   
@@ -1005,11 +998,38 @@ function AnalyzeScreen({ onAddMeal, onShowToast }) {
       onShowToast('Refeição salva com sucesso! ✓');
     }
   };
+
+  const saveApiKey = () => {
+    if (tempApiKey) {
+      onSetApiKey(tempApiKey);
+      onShowToast('API Key salva! ✓');
+    }
+  };
   
   return (
     <div className="main">
       <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Analisar Refeição</h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: 15 }}>Tire uma foto ou selecione da galeria</p>
+      
+      {!apiKey && (
+        <div className="api-key-input">
+          <label>🔑 API Key do Gemini (necessária para análise)</label>
+          <input
+            type="password"
+            className="input"
+            placeholder="Cole sua API Key aqui"
+            value={tempApiKey}
+            onChange={(e) => setTempApiKey(e.target.value)}
+            style={{ marginBottom: 8 }}
+          />
+          <button className="btn btn-primary" onClick={saveApiKey} style={{ marginTop: 8 }}>
+            Salvar API Key
+          </button>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
+            Pegue sua key em: <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>aistudio.google.com</a>
+          </p>
+        </div>
+      )}
       
       {!image ? (
         <label className="upload-area">
@@ -1027,8 +1047,23 @@ function AnalyzeScreen({ onAddMeal, onShowToast }) {
       ) : analyzing ? (
         <div className="analyzing">
           <div className="spinner"></div>
-          <div className="analyzing-title">Analisando sua refeição...</div>
-          <div className="analyzing-subtitle">Identificando alimentos com IA (Gemini)</div>
+          <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>Analisando com IA...</h2>
+          <p style={{ color: 'var(--text-muted)' }}>Identificando alimentos</p>
+          
+          <div className="analyzing-steps">
+            <div className={`step ${step >= 1 ? (step > 1 ? 'done' : 'active') : ''}`}>
+              <div className="step-icon">{step > 1 ? '✓' : '1'}</div>
+              <span>Enviando imagem...</span>
+            </div>
+            <div className={`step ${step >= 2 ? (step > 2 ? 'done' : 'active') : ''}`}>
+              <div className="step-icon">{step > 2 ? '✓' : '2'}</div>
+              <span>Identificando alimentos...</span>
+            </div>
+            <div className={`step ${step >= 3 ? 'done' : ''}`}>
+              <div className="step-icon">{step >= 3 ? '✓' : '3'}</div>
+              <span>Calculando nutrientes...</span>
+            </div>
+          </div>
         </div>
       ) : result ? (
         <div>
@@ -1041,7 +1076,7 @@ function AnalyzeScreen({ onAddMeal, onShowToast }) {
               <div className="results-check">✓</div>
               <div>
                 <div style={{ fontWeight: 600, fontSize: 18 }}>Análise Completa</div>
-                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{result.items.length} alimentos identificados</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{result.items.length} alimento(s) identificado(s)</div>
               </div>
             </div>
             
@@ -1095,24 +1130,21 @@ function AnalyzeScreen({ onAddMeal, onShowToast }) {
             <img src={image} alt="Preview" className="preview-image" />
             <button className="preview-remove" onClick={() => setImage(null)}>×</button>
           </div>
-          {error && (
-            <div style={{ 
-              padding: '12px', background: 'rgba(255, 107, 107, 0.1)', 
-              color: '#FF6B6B', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' 
-            }}>
-              {error}
-            </div>
-          )}
-          <button className="btn btn-primary" onClick={analyze}>
-            🔍 Analisar com Gemini AI
+          <button className="btn btn-primary" onClick={analyze} disabled={!apiKey}>
+            🔍 Analisar com Gemini
           </button>
+          {!apiKey && (
+            <p style={{ fontSize: 13, color: 'var(--accent)', textAlign: 'center', marginTop: 12 }}>
+              Configure sua API Key acima para analisar
+            </p>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function HistoryScreen({ meals, onDeleteMeal }) {
+function HistoryScreen({ meals }) {
   return (
     <div className="main">
       <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Histórico</h1>
@@ -1146,15 +1178,13 @@ function HistoryScreen({ meals, onDeleteMeal }) {
   );
 }
 
-function ProfileScreen({ user, onLogout, onUpdateUser }) {
-  const [apiKey, setApiKey] = useState(Storage.get('apiKey', DEFAULT_API_KEY));
-  const [showKey, setShowKey] = useState(false);
-
-  const saveKey = (newKey) => {
-    setApiKey(newKey);
-    Storage.set('apiKey', newKey);
+function ProfileScreen({ user, onLogout, apiKey, onSetApiKey }) {
+  const [tempApiKey, setTempApiKey] = useState(apiKey);
+  
+  const saveApiKey = () => {
+    onSetApiKey(tempApiKey);
   };
-
+  
   return (
     <div className="main">
       <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 24 }}>Perfil</h1>
@@ -1180,31 +1210,23 @@ function ProfileScreen({ user, onLogout, onUpdateUser }) {
       </div>
       
       <div className="card">
-        <div className="card-title">Configurações da IA</div>
-        <div className="form-group">
-          <label className="form-label">Chave da API Gemini</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input 
-              type={showKey ? "text" : "password"} 
-              className="input" 
-              value={apiKey}
-              onChange={(e) => saveKey(e.target.value)}
-              placeholder="Cole sua API Key aqui"
-            />
-            <button 
-              className="btn btn-secondary" 
-              style={{ width: 'auto', padding: '0 16px' }}
-              onClick={() => setShowKey(!showKey)}
-            >
-              {showKey ? '🙈' : '👁️'}
-            </button>
-          </div>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
-            Usada para análise de imagens. Mantenha em segurança.
-          </p>
-        </div>
+        <div className="card-title">🔑 API Key do Gemini</div>
+        <input
+          type="password"
+          className="input"
+          placeholder="Cole sua API Key aqui"
+          value={tempApiKey}
+          onChange={(e) => setTempApiKey(e.target.value)}
+          style={{ marginBottom: 12 }}
+        />
+        <button className="btn btn-primary" onClick={saveApiKey}>
+          Salvar API Key
+        </button>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12, textAlign: 'center' }}>
+          Pegue sua key em: <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>aistudio.google.com</a>
+        </p>
       </div>
-
+      
       <div className="card">
         <div className="card-title">Metas Diárias</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -1232,7 +1254,7 @@ function ProfileScreen({ user, onLogout, onUpdateUser }) {
       </button>
       
       <div style={{ textAlign: 'center', marginTop: 40, color: 'var(--text-muted)', fontSize: 13 }}>
-        NutriScan v1.0.0<br/>
+        NutriScan v1.0.0 + Gemini AI<br/>
         Feito com 💚 no Brasil
       </div>
     </div>
@@ -1299,19 +1321,19 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState('home');
   const [meals, setMeals] = useState([]);
   const [toast, setToast] = useState(null);
+  const [toastType, setToastType] = useState('success');
+  const [apiKey, setApiKey] = useState('');
   
-  // Load data from localStorage on mount
   useEffect(() => {
     const savedUser = Storage.get('user');
     const savedMeals = Storage.get('meals', []);
+    const savedApiKey = Storage.get('gemini_api_key', '');
     
-    if (savedUser) {
-      setUser(savedUser);
-    }
+    if (savedUser) setUser(savedUser);
     setMeals(savedMeals);
+    setApiKey(savedApiKey);
   }, []);
   
-  // Save meals to localStorage when they change
   useEffect(() => {
     if (meals.length > 0) {
       Storage.set('meals', meals);
@@ -1329,18 +1351,20 @@ export default function App() {
     setCurrentTab('home');
   };
   
+  const handleSetApiKey = (key) => {
+    setApiKey(key);
+    Storage.set('gemini_api_key', key);
+  };
+  
   const addMeal = (meal) => {
     const updatedMeals = [meal, ...meals];
     setMeals(updatedMeals);
     setCurrentTab('home');
   };
   
-  const deleteMeal = (id) => {
-    setMeals(meals.filter(m => m.id !== id));
-  };
-  
-  const showToast = (message) => {
+  const showToast = (message, type = 'success') => {
     setToast(message);
+    setToastType(type);
   };
   
   if (!user) {
@@ -1367,18 +1391,28 @@ export default function App() {
           <HomeScreen meals={meals} user={user} onNavigate={setCurrentTab} />
         )}
         {currentTab === 'analyze' && (
-          <AnalyzeScreen onAddMeal={addMeal} onShowToast={showToast} />
+          <AnalyzeScreen 
+            onAddMeal={addMeal} 
+            onShowToast={showToast} 
+            apiKey={apiKey}
+            onSetApiKey={handleSetApiKey}
+          />
         )}
         {currentTab === 'history' && (
-          <HistoryScreen meals={meals} onDeleteMeal={deleteMeal} />
+          <HistoryScreen meals={meals} />
         )}
         {currentTab === 'profile' && (
-          <ProfileScreen user={user} onLogout={handleLogout} />
+          <ProfileScreen 
+            user={user} 
+            onLogout={handleLogout}
+            apiKey={apiKey}
+            onSetApiKey={handleSetApiKey}
+          />
         )}
         
         <BottomNav currentTab={currentTab} onChangeTab={setCurrentTab} />
         
-        {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+        {toast && <Toast message={toast} type={toastType} onClose={() => setToast(null)} />}
       </div>
     </>
   );
